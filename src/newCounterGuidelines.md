@@ -17,7 +17,7 @@
 ---
 ---
 
-## All the updated guideline different groups gave for this particular guideline (all guidelines seperated by  lots of ----------------------------------------)
+## All the updated guideline that different groups gave for this particular guideline (all guidelines seperated by  lots of ----------------------------------------)
 
 
 
@@ -37,7 +37,7 @@
 ---
 ---
 
-## All the updated guideline different groups gave for this particular guideline (all guidelines seperated by  lots of ----------------------------------------)
+## All the updated guideline that different groups gave for this particular guideline (all guidelines seperated by  lots of ----------------------------------------)
 
 
 
