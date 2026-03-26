@@ -138,6 +138,8 @@ Here is the diff:
 Review this PR and suggest improvements.
 ```
 
+---
+
 ### Guideline 11: Issues That Require Human Judgment (DO NOT FORGET TO UPDATE THE NAME OF THE GUIDELINE AS WELL)
 
 ---
