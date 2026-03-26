@@ -15,5 +15,5 @@ This repo collects our original Week 10 code review / PR prompting guidelines, p
 
 - **`src/workingGuidelines.md`**: Guidelines that **worked well**.
   - The top of the file contains the guidelines that worked.
-  - At the bottom, under **“Add new summarized guidelines here”**, we add the **summarized** version(s) of guideline(s) (keeping the **same guideline number** as in `src/guidelines.md`).
+  - At the bottom, under **“Add new summarized guidelines here”**, we add the **summarized** version(s) of guideline(s) (keeping the **same guideline number** as in `src/guidelines.md` so that it is easier for us to know which guideline does this summarized guideline refers to).
 
