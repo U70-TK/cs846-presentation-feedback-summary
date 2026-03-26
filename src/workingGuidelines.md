@@ -172,7 +172,63 @@ storage.py: search_by_error_type(), line 79
 Can you check the crash_dedup code and tell me if there are any problems?
 ```
 
-----
+-------------------------------------------------------
+
+##Add new summarized guideline here
+
+### Guideline 6: Explicitly State Assumptions, Non-Goals, and Review Boundaries
+
+**Description:**
+
+When prompting an LLM for code review, explicitly state (a) what assumptions it should make about surrounding systems, (b) what is out of scope (non-goals), and (c) what the review boundaries are. Crucially, add a boundary rule that still allows the model to flag issues that arise directly from the PR code (including interactions visible in the provided functions), so the review stays focused without missing real defects.
+
+**Reasoning:**
+
+Even with code context, LLMs often overreach by:
+
+- Assuming missing system components or unknown requirements
+- Critiquing hypothetical architectures and proposing redesigns
+- Flagging issues that are handled elsewhere (auth/validation/persistence)
+- Drifting into unrelated modules or “best practices” not relevant to the PR
+
+By explicitly stating assumptions, non-goals, and boundaries, you:
+
+- Prevent hallucinated architectural criticism and out-of-scope suggestions
+- Keep feedback aligned with the actual change and the provided code
+- Preserve signal by still catching correctness/consistency/maintainability problems that are caused by the PR logic (not by imaginary surrounding systems)
+- Reduce noise while avoiding the “too strict” failure mode where important issues get ignored
+
+**Examples:**
+
+**Good Example:**
+
+```
+Review this PR.
+
+Context:
+- Here is the codebase before the PR.
+- Here is the codebase after the PR.
+
+Assumptions / out of scope:
+- Assume authentication, request validation, and database persistence layers work correctly.
+- Treat auth/validation/persistence implementation details as out of scope unless the PR code misuses them.
+
+Review boundaries (non-goals):
+- Do not suggest broader architectural redesigns.
+- Do not propose changes to unrelated modules or systems not shown here.
+
+What you MUST still flag:
+- Any correctness, consistency, or maintainability issues that arise directly from the PR logic, including interactions visible within the shown functions and their call relationships.
+
+Keep the review strictly within these boundaries.
+```
+
+**Bad Example:**
+
+```
+Review this PR and suggest improvements.
+```
+
 
 
 
