@@ -1,0 +1,300 @@
+# Week 10 Guidelines: CodeReview / PR
+
+**Authors:** [Neel Sanjaybhai Faganiya, Ibrahim Mohammed Sayem, Felix Wang]
+
+**Readings Assigned:**  
+- Accountability in Code Review: The Role of Intrinsic Drivers and the Impact of LLMs [1]
+- Prompting and Fine-tuning Large Language Models for Automated Code Review Comment Generation [2]
+- Rethinking Code Review Workflows with LLM Assistance: An Empirical Study [3]
+- The Impact of Large Language Models (LLMs) on Code Review Process [4]
+- LLMs as Code Review Agents: A Rapid Review [5]
+- Evaluating Large Language Models for Code Review [6]
+- Automated Code Review In Practice [7]
+- GitHub blog: Code review in the age of AI [8] 
+- Unlocking the full power of Copilot code review: Master your instructions files [9]
+- Using GitHub Copilot code review [10]
+- uReview: Scalable, Trustworthy GenAI for Code Review at Uber [11] 
+- Detecting malicious pull requests at scale with LLMs [12]
+
+## 1. Guidelines
+
+### Guideline 1: Create a structured instruction file [9].
+
+**Description:**  
+
+Add a Copilot Code Review instructions file that is concise, structured, and scoped to where it should apply:
+
+* Use repo-wide `.github/copilot-instructions.md` for standards that apply everywhere.
+
+* Use path-specific `.github/instructions/*.instructions.md` with applyTo frontmatter for language/module-specific rules. 
+
+Your instruction file should be concise and structured, consider including sections like: "Naming Conventions", "Code Style", "Error Handling", "Testing", and "Example".
+
+**Reasoning:**  
+LLMs struggle with complex tasks that require extensive contextual or repository understanding [5], and due to the inherent undeterministic nature of LLMs, their outputs can drift in unexpected directions without clear constraints. Github Copilot recently added support for repo-wide and path-specific instructions [9] so that you can define a universal and customized guidelines for your Copilot agent to fit into your workflow. By providing structured headings and bullet points, it helps Copilot to access organized and focued instruction. However, long instruction files (over 1000 lines) should be avoided, as this leads to inconsistent behaviours and may cause "Lost in the middle" effect [16]. 
+
+**Good Example:**  
+
+```
+---
+applyTo: "**/*.ts"
+---
+# TypeScript Coding Standards
+This file defines our TypeScript coding conventions for Copilot code review.
+
+## Naming Conventions
+
+- [Define your naming conventions here.]
+
+## Code Style
+
+- [Define your code style expectations here.]
+
+## Error Handling
+
+- [Define your error handling expectations here.]
+
+## Testing
+
+- [Define your testing expectations here. ]
+
+## Example
+
+```typescript
+// Good
+[One good example here]
+
+// Bad
+[One bad example here]
+```
+
+**Bad Example:**
+
+```
+Perform a Pull Request review.
+```
+
+---
+
+### Guideline 2: Use Automated CI Gates [8]
+
+#### Guideline 2.1: Static Analysis Tool together with LLM [11]
+
+**Description:**
+
+Integrate static analysis tools (e.g., linters, type checkers, security scanners) into your CI pipeline and configure them as mandatory checks before pull request merge. GitHub CI supports assorted static analysis tool integrations like CodeQL (primarily for security), Semgrep (pattern based bug finding with customized rules), and your ecosystem’s usual linters/type checkers (ESLint/tsc, pylint/mypy, etc.). Compare the output given by the Static Analysis Tool along with the output from the LLM and use the tool findings to ground, verify, or challenge the LLM’s review comments rather than treating the LLM as the sole reviewer.
+
+**Reasoning:**
+
+Unlike LLMs, most static analysis tools like Semgrep, CodeQL, etc. are deterministic and rule-based. They enforce predefined constraints across all changes, which can provide a consistent and systematic guarantee to your project. Depending on its proprietary, static analysis tools are generally capable of detecting: Syntax and type errors, Code style violations, Security vulnerabilities, Dead code or unreachable branches, and Complexity thresholds. However, this is not in conflict with LLM-assisted Code Review, as static analysis tools sometimes lack flexibility and may generate false alarms. These tools should be combined together. 
+
+**Good Example:**
+
+An good example of static analysis tool pattern definition file using Semgrep could be found in `.github/semgrep.yml`. 
+
+However, it should be noted that this configuration is illustrative rather than exhaustive. Please use the LLM to generate more suitable patterns, you can check the static analysis result using our example at [PR #11 -> Files Changed](https://github.com/U70-TK/cs846-presentation-winter-26/pull/11/changes).
+
+Customized static analysis patterns should neither be overly broad nor overly strict.
+
+- If it's too broad, it may trigger too many false positives. 
+- If it's too strict, it likely will not catch anything. 
+
+A good static analysis pattern definition should find a balance in between, and match project-specific conventions and expectations. 
+
+**Bad Example:**
+
+Static analysis patterns being too broad or too strict. Either:
+
+- Too many false positives are captured, or
+- Didn't catch any useful things.
+
+#### Guideline 2.2: Automated Dependency Management Tools together with LLM
+
+**Description:**
+
+Secure your project against vulnerable or outdated third-party packages using two complementary approaches: (1) actively audit dependencies by having the LLM run ecosystem-specific audit tools, and (2) proactively monitor for new vulnerabilities by enabling automated dependency alerting services like Dependabot.
+
+**Reasoning:**
+
+A large portion of modern security risk does not originate from first-party code, but from third-party dependencies [17]. Even if your internal code is perfectly written, a vulnerable library version can introduce critical vulnerabilities into production. Active auditing (on-demand scans) catches issues at review time, while proactive monitoring (continuous alerting) catches newly disclosed vulnerabilities in packages you already depend on. Combining both provides defense in depth against software supply-chain attacks.
+
+**Good Example (Active — LLM-driven audit):**
+
+During code review, instruct the LLM to run the appropriate audit command for your package ecosystem to identify known vulnerabilities:
+
+- **Node.js:** `npm audit` or `yarn audit`
+- **Python (pip):** `pip-audit`
+- **Rust:** `cargo audit`
+- **Ruby:** `bundle-audit`
+
+The LLM can then interpret the audit output, assess severity, and suggest remediation steps (e.g., upgrading a specific package version).
+
+**Good Example (Proactive — Dependabot alerting):**
+
+In GitHub, fork the current repository (to make sure you have admin access), then go to:
+
+Settings -> Security -> Advanced Security -> Dependabot -> Enable Dependabot Alerts -> Enable.
+
+Trigger a push on main branch, then go to:
+
+Security -> Vulnerability Alerts -> Dependabot.
+
+This continuously monitors vulnerability databases and alerts you when a dependency has a known CVE, without requiring manual scans.
+
+**Bad Example:**
+
+```
+You are an experienced coding agent, please verify the dependency versions for me: [path-to-file].
+```
+
+This is too vague — it does not specify what tool to use, what vulnerabilities to check against, or what action to take on findings.
+
+#### Guideline 2.3 Enforce Test Quality over Coverage [18]
+
+**Description:**
+
+Before approving a pull request, verify that automated tests are executed in CI and that the change is covered by meaningful tests. Ensure that the project’s minimum test coverage threshold is met, and dedicatedly review the tests themselves to confirm they validate real behavior rather than merely increasing coverage numbers.
+
+**Reasoning:**
+
+While static analysis and dependency scanning catch structural and known vulnerability issues, they do not validate runtime behavior. Tests provide behavioral guarantees and protect against regressions.
+
+**Good Example:**
+
+Ensure the PR followed good testing principles introduced in `Week 9 - Testing` on Learn. The test suite should be reviewed as a first-class component of the pull request, not as an afterthought. Enforce a team-wide test coverage as a threshold and integrate it into GitHub Actions. 
+
+**Bad Example:**
+
+Writing meaningless test cases to inflate high test coverage.
+
+---
+
+### Guideline N: [Short, Actionable Title]
+(Repeat the same structure for each guideline.)
+
+---
+
+### Guideline 3: Detect Malicious Pull Requests [13]
+
+**Description:**
+
+When reviewing a pull request, instruct the LLM to actively scan for potentially malicious patterns in the diff — such as obfuscated code, hardcoded credentials, suspicious network calls, unexpected permission escalations, or data exfiltration attempts. **Especially flag binary executables** (e.g., `.exe`, `.dll`, `.jar`, `.so`, `.wasm`), which cannot be diffed, linted, or statically analyzed and represent a blind spot for both human and automated review. For any binary detected, demand provenance, integrity verification (e.g., SHA-256 checksum), reproducibility, and a necessity justification before allowing the merge.
+
+To make this reliable in practice, operationalize it through structured instruction files (Guideline 1). Without explicit instructions, Copilot tends to drift into surface-level review and can underweight supply-chain and security risks.
+
+**Reasoning:**
+
+Malicious pull requests are a real and growing attack vector in software supply chains [12]. These can range from subtle backdoors injected through obfuscated code to committed binaries containing known CVE vulnerabilities [13]. Unlike source code, binary artifacts cannot be meaningfully reviewed using standard development workflows, making them particularly dangerous. Simply stating "be cautious" is insufficient — without a concrete checklist encoded in the instruction file, LLMs tend to skip or underweight these findings entirely. By framing malicious pattern detection as a mandatory escalation with specific evidence requirements, the LLM is forced to surface these risks regardless of how the PR is described.
+
+**Good Example:**
+
+Add a security detection section to `.github/copilot-instructions.md`:
+
+```markdown
+## CRITICAL: Malicious Pattern Detection
+
+When reviewing a PR, actively check for:
+- Obfuscated or minified code that was not generated by a build tool.
+- Hardcoded secrets, tokens, or credentials.
+- Unexpected outbound network calls or data exfiltration patterns.
+- Permission escalations or changes to authentication/authorization logic.
+- Binary executables or non-text files invoked by code.
+
+For any binary file detected, immediately flag it as a BLOCKER-severity finding and demand:
+1. Provenance (source origin).
+2. Integrity evidence (SHA-256 checksum matching a known-good artifact).
+3. Justification for why it must be a committed binary.
+4. The merge decision MUST be Reject until all items are provided.
+```
+
+**Bad Example:**
+
+Ignore suspicious patterns and merge the PR, or rely solely on the PR description to determine safety.
+
+---
+
+## 2. Guidelines with Partial or Indirect Alignment
+
+### Guideline 1: Diagnose first, patch later (Group 2)
+
+**Description:**
+
+When using an LLM for an iterative debugging or diagnostic task where the root cause is unclear, prompt it to explain the likely issue, the supporting evidence, and what remains uncertain *before* proposing any code changes. Do not use a structured instruction file that forces a complete answer (patch + tests + summary) in one shot, as this causes the LLM to skip genuine diagnosis and jump to speculative fixes.
+
+**Reasoning:**
+
+A repo-wide instruction file that mandates a full structured response (root-cause analysis, proposed patch, test updates, edge cases, and summary) works well for well-defined review tasks, but over-constrains under-specified debugging scenarios. When the root cause is genuinely unclear, forcing the LLM to produce a patch in one shot leads it to fabricate a plausible-looking but potentially incorrect fix.
+
+
+**Provided Good Example:**
+
+No `instruction.md` is used for this task. 
+
+```
+This is an iterative debugging task. Do not propose code changes yet.
+First explain the likely issue in the current code, what evidence supports it, and what is still uncertain.
+Avoid refactoring or broad fixes until the cause is clear.
+```
+
+**Rationale for the Lack of Direct Alignment:**
+
+This guideline targets iterative debugging, but the scope of this week's guidelines is code review. In a typical code review workflow, the reviewer acts as a gatekeeper — evaluating the correctness, style, and safety of changes submitted by the code owner — rather than diagnosing and fixing bugs on the owner's behalf. Debugging is the responsibility of the code author, not the reviewer. While the "diagnose before patching" principle is sound engineering advice, it addresses a fundamentally different activity than reviewing a pull request, which is why it does not directly align with our code review focus.
+
+### Guideline 2: Discuss Merge Conflict with Copilot in Web App instead of through instructions file (Group 6)
+
+**Description:**
+Github has a web app that allows copilot conversations with access to the git repo, and this is a much easier method to discuss merge conflicts and what will come of each possible choice.
+
+**Reasoning:**
+This is quicker and easier to deal with merge conflicts than setting them up locally and simply using the instructions file does not deal with them automatically.
+
+**Provided Good Example:**
+
+For this solution, the copilot chat in the GitHub web app was used instead of the instructions file for the detailed review.
+
+```
+Please review the changes and identify merge conflicts, describing what each option would entail.
+
+Please walk through each conflict section and spell out what ours vs theirs is for each conflicting file.
+
+Please produce the 3-way merged chunks with step-by-step resolution ideas, for the merge into NewGuideline
+```
+
+**Rationale for the Lack of Direct Alignment:**
+
+Resolving merge conflicts is not a code review activity. Merge conflicts are the PR author's responsibility — the reviewer acts as a gatekeeper who evaluates the correctness and quality of the proposed changes, not someone who resolves version-control issues on the author's behalf. Platforms like GitHub, GitLab already detect and block conflicting PRs automatically, and Git itself along with IDE merge editors (e.g., VS Code's built-in 3-way merge editor) already provide robust tooling for conflict resolution. I personally don't agree that this is a task needed much assistance from LLMs and this falls outside the PR reviewer's workflow entirely.
+
+---
+
+## 3. References
+
+[1] Alami, Adam, et al. ‘Accountability in Code Review: The Role of Intrinsic Drivers and the Impact of LLMs’. ACM Trans. Softw. Eng. Methodol., vol. 34, no. 8, Association for Computing Machinery, Oct. 2025, https://doi.org/10.1145/3721127.
+
+[2] Haider, Md Asif, et al. "Prompting and fine-tuning large language models for automated code review comment generation." arXiv preprint arXiv:2411.10129 (2024).
+
+[3] Aðalsteinsson, Fannar Steinn, et al. "Rethinking code review workflows with llm assistance: An empirical study." 2025 ACM/IEEE International Symposium on Empirical Software Engineering and Measurement (ESEM). IEEE, 2025.
+
+[4] Collante, Antonio, et al. "The Impact of Large Language Models (LLMs) on Code Review Process." arXiv preprint arXiv:2508.11034 (2025).
+
+[5] Kawalerowicz, Marcin, Marcin Pietranik, and Krzysztof Stępniak. "LLMs as Code Review Agents: A Rapid Review and Experimental Evaluation with Human Expert Judges." International Conference on Computational Collective Intelligence. Cham: Springer Nature Switzerland, 2025.
+
+[6] Cihan, Umut, et al. "Evaluating Large Language Models for Code Review." arXiv preprint arXiv:2505.20206 (2025).
+
+[7] Cihan, Umut, et al. "Automated code review in practice." 2025 IEEE/ACM 47th International Conference on Software Engineering: Software Engineering in Practice (ICSE-SEIP). IEEE, 2025.
+
+[8] Shwer, Elle, et al. “Code Review in the Age of AI: Why Developers Will Always Own the Merge Button.” The GitHub Blog, 14 July 2025, github.blog/ai-and-ml/generative-ai/code-review-in-the-age-of-ai-why-developers-will-always-own-the-merge-button.
+
+[9] Gopu, Ria, et al. “Unlocking the Full Power of Copilot Code Review: Master Your Instructions Files.” The GitHub Blog, 15 Nov. 2025, github.blog/ai-and-ml/unlocking-the-full-power-of-copilot-code-review-master-your-instructions-files.
+
+[10] “Using GitHub Copilot Code Review - GitHub Docs.” GitHub Docs, docs.github.com/en/copilot/how-tos/use-copilot-agents/request-a-code-review/use-code-review.
+
+[11] Mahajan, Sonal. “uReview: Scalable, Trustworthy GenAI for Code Review at Uber | Uber Blog.” Uber Blog, 3 Sept. 2025, www.uber.com/en-CA/blog/ureview.
+
+[12] Qian, Callan Lamb Christoph Hamsen, Julien Doutre, Jason Foral, Kassen. “Detecting Malicious Pull Requests at Scale With LLMs | Datadog.” Datadog, 21 Oct. 2025, www.datadoghq.com/blog/engineering/malicious-pull-requests.
+
+[13] Szymanski, M. et al. (2024). Limitations of the LLM-as-a-Judge Approach for Evaluating LLM Outputs in Expert Knowledge Tasks. In Proceedings of the 30th International Conference on Intelligent User Interfaces (IUI 2025). ACM. DOI: 10.1145/3708359.3712091. Available at: https://dl.acm.org/doi/10.1145/3708359.3712091
+
+[14] Wang, R., Guo, J., Gao, C., Fan, G., Chong, C. Y., & Xia, X. (2025). Can LLMs Replace Human Evaluators? An Empirical Study of LLM-as-a-Judge in Software Engineering. arXiv preprint arXiv:2502.06193. Available at: https://arxiv.org/abs/2502.06193
+
+---
+
