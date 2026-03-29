@@ -27,13 +27,6 @@ INVOICES = [
         "created_at": "2026-03-15T10:00:00Z",
     },
     {
-        "id": 104,
-        "customer_id": 1,
-        "status": "open",
-        "total_cents": 3000,
-        "created_at": "2026-01-05T10:00:00Z",
-    },
-    {
         "id": 201,
         "customer_id": 2,
         "status": "open",
