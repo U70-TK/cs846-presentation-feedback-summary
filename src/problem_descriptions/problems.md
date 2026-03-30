@@ -59,7 +59,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ## Problem B1: Context-First Correctness Review [4 mins]
 
-**Guideline Target:** Guideline 4: Use a Structured, Context-First Review Prompt
+**Guideline Target:** Guideline 6: Use a Structured, Context-First Review Prompt
 
 **Task Description:**  
 
@@ -84,7 +84,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ## Problem B2: Evidence-Grounded Test Review and Comment Validation [5 mins]
 
-**Guideline Target:** Guideline 5: Require Evidence-Grounded Justification Before Accepting LLM Claims
+**Guideline Target:** Guideline 7: Require Evidence-Grounded Justification Before Accepting LLM Claims
 
 **Task Description:**  
 Review only the tests added in this PR and validate the following peer review comment:
@@ -114,7 +114,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ## Problem B3: Boundary-Controlled Review [3 mins]
 
-**Guideline Target:** Guideline 6: Explicitly State Assumptions, Non-Goals, and Review Boundaries
+**Guideline Target:** Guideline 8: Explicitly State Assumptions, Non-Goals, and Review Boundaries
 
 **Task Description:**  
 Review this PR for maintainability and PR-fit concerns only. Your review should stay within the scope implied by the PR description and the changed files. Focus on issues introduced by the new helper and endpoint logic, brittle coupling between changed functions, and any mismatch between the stated intent of the PR and the implemented behavior. Do not include findings about unrelated modules or broader redesign ideas. List findings with severity, and end with a merge decision.
@@ -134,7 +134,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 **Model to use:** GPT-4o
 
-**Guideline Target:** Guideline 2.2: Automated Dependency Management Tools together with LLM
+**Guideline Target:** Guideline 10.2: Automated Dependency Management Tools together with LLM
 
 #### Problem C.1: Manual Dependency Diff Review [3 mins]
 
@@ -168,7 +168,7 @@ See `problem_c/after/` in the project directory. Run `npm install` in `problem_c
 
 **Model to use:** GPT-4o
 
-**Guideline Target:** Guideline 3: Detect Malicious Pull Requests
+**Guideline Target:** Guideline 11: Detect Malicious Pull Requests
 
 #### TypeScript Environment Setup
 
@@ -222,14 +222,14 @@ This problem has two phases:
 **Phase 1 — Review without instruction files [5 mins]:**
 Review the Pull Request *without* using any `.github/copilot-instructions.md` or path-specific instruction files. List your findings and follow-up questions to the PR owner. End with a merge decision (`Approve`, `Request Changes`, or `Reject`).
 
-**Phase 2 — Review with Guideline 3 instruction file [5 mins]:**
-Now add the malicious pattern detection instructions from Guideline 3 to `.github/copilot-instructions.md` and review the same PR again. Compare the results:
+**Phase 2 — Review with Guideline 11 instruction file [5 mins]:**
+Now add the malicious pattern detection instructions from Guideline 11 to `.github/copilot-instructions.md` and review the same PR again. Compare the results:
 
 1. Did the instruction file cause the LLM to surface findings that were missed in Phase 1?
 2. What specific risks were identified only after the instruction file was applied?
 3. Provide an updated merge decision.
 
-This exercise demonstrates why operationalizing security guidelines through structured instruction files (Guideline 1) is critical — without them, LLMs tend to drift into surface-level review and miss supply-chain risks.
+This exercise demonstrates why operationalizing security guidelines through structured instruction files (Guideline 9) is critical — without them, LLMs tend to drift into surface-level review and miss supply-chain risks.
 
 **Starter Code:**
 The code containing the feature is on branch `feat-audit`, and the PR related to this task is #10. Please review the code first and test it in your browser if you want.
@@ -244,7 +244,7 @@ The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/
 
 This PR commits a compiled binary alongside its C source code, a Makefile, and a `SHA256SUMS` file. The PR description states that the binary is required by the backend and that the source is provided for auditability and reproducibility.
 
-Review the Pull Request using the same Guideline 3 instruction file from D.1 Phase 2. The LLM should flag the binary — but this time, evaluate whether the four-point checklist from Guideline 3 is satisfied:
+Review the Pull Request using the same Guideline 11 instruction file from D.1 Phase 2. The LLM should flag the binary — but this time, evaluate whether the four-point checklist from Guideline 11 is satisfied:
 
 1. **Provenance:** Is the source code provided? Can you trace the binary's origin?
 2. **Integrity:** Does the SHA-256 hash in `SHA256SUMS` match the committed binary? Verify by running `shasum -a 256 -c SHA256SUMS` in the vendor directory.
@@ -255,7 +255,7 @@ Based on your evaluation:
 - If all four points are satisfied, the correct merge decision is **Approve** (or Request Changes for minor issues) — not a blanket Reject.
 - If any point fails, explain which one and what evidence is missing.
 
-This exercise demonstrates that Guideline 3 is not a blanket "reject all binaries" rule. A verified, reproducible binary with proper attestation can be the safer engineering choice compared to dynamically downloading it at build time (which introduces version drift, non-reproducibility, and upstream compromise risk).
+This exercise demonstrates that Guideline 11 is not a blanket "reject all binaries" rule. A verified, reproducible binary with proper attestation can be the safer engineering choice compared to dynamically downloading it at build time (which introduces version drift, non-reproducibility, and upstream compromise risk).
 
 **Starter Code:**
 The code containing the feature is on branch `feat-audit-checksum`, and the PR related to this task is #21. Please review the code first and test it in your browser if you want.
