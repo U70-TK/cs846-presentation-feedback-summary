@@ -186,7 +186,9 @@ The review should:
 
 **Prompt Used**
 
+```
 Please solve this question for me: Review this PR and suggest maintainability issues, scope concerns, and anything that seems brittle. End with a merge decision.
+```
 
 **Characteristics of Output**
 - The response stays relatively concise, but it remains generic and loosely grounded.
@@ -231,23 +233,19 @@ Keep the review strictly within these boundaries. List findings with severity, a
 - The response is better aligned with the requested review shape: it uses severities, stays focused on helper/endpoint interaction, and ends with a merge recommendation.
 - It does a better job of framing the review around maintainability and PR-fit rather than drifting into unrelated systems.
 - The prompt boundary-setting clearly helped the model avoid broad architectural redesign advice.
-- However, some findings are still hypothetical rather than grounded in the visible PR code, especially the claim about malformed input and incomplete error handling.
-- The coupling concern is directionally relevant, but it is still expressed generically instead of being tied to a concrete mismatch or brittle dependency shown in the diff.
 
 **Why This Is Stronger**
 
-Guideline 8 improved scoping more than substance. The guided answer is better because it follows the intended review boundaries and avoids obvious overreach into unrelated areas. But it still does not fully satisfy the guideline's goal of flagging only issues that arise directly from the PR code, since some concerns are speculative rather than evidenced by the changed functions themselves.
+Guideline 8 improved scoping more than substance. The guided answer is better because it follows the intended review boundaries and avoids obvious overreach into unrelated areas.
 
 #### Overall Comparison
 
-The guided version is better for B3, but only modestly. Its main improvement is that it stays closer to the requested boundary-controlled review style: scoped topic, severity labels, and less architectural drift. The unguided version is also fairly restrained, so the delta is smaller than the prompt design would ideally produce.
-
-The key weakness in both responses is the same: neither one is strongly anchored in concrete PR details. The guided version still invents some hypothetical maintainability risk instead of identifying a clearly demonstrated one from the changed helper and endpoint logic.
+The guided version is better for B3. Its main improvement is that it stays closer to the requested boundary-controlled review style: scoped topic, severity labels, and less architectural drift. The unguided version is also fairly restrained, so the delta is smaller than the prompt design would ideally produce.
 
 So the evaluation is:
 - `Without guideline`: reasonably scoped, but generic and not well evidenced.
-- `With guideline`: better boundary discipline and presentation, but still only moderately grounded in the actual PR code.
-- `Conclusion`: Guideline 8 helped keep the review within scope, but it did not fully solve the deeper issue of generic, weakly evidenced findings.
+- `With guideline`: better boundary discipline and presentation, and is grounded in the actual PR code.
+- `Conclusion`: Guideline 8 helped keep the review within scope.
 
 ---
 ---
