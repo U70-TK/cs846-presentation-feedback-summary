@@ -517,7 +517,7 @@ Resolving merge conflicts is not a code review activity. Merge conflicts are the
 
 ---
 
-## 2. References
+## 3. References
 
 [1] Alami, Adam, et al. ‘Accountability in Code Review: The Role of Intrinsic Drivers and the Impact of LLMs’. ACM Trans. Softw. Eng. Methodol., vol. 34, no. 8, Association for Computing Machinery, Oct. 2025, https://doi.org/10.1145/3721127.
 
