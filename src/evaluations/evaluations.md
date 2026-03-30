@@ -101,7 +101,9 @@ The review should:
 
 **Prompt Used**
 
+```
 Please solve this question for me: Review the tests added in this PR and say whether this review comment is accurate. Then explain why and suggest what tests should be added.
+```
 
 **Characteristics of Output**
 - The response reaches the right top-level classification, but the explanation is broad and unsupported.
@@ -153,7 +155,6 @@ You are reviewing a pull request that adds new tests to a Python project. Your t
 - It ties the classification to concrete artifacts such as helper-call assertions and response-key checks instead of relying only on summary statements.
 - It keeps the scope on validating the peer review comment rather than drifting into a general test review.
 - The recommended follow-up tests are more directly connected to the claimed gaps in semantic validation.
-- However, the answer still falls short of the full guideline standard because it references test names and example assertions loosely rather than consistently citing exact line numbers from the diff.
 
 **Why This Is Stronger**
 
@@ -166,7 +167,7 @@ The improvement in B2 is more meaningful than in B1. In this task, the purpose o
 So the evaluation is:
 - `Without guideline`: correct conclusion, but weak evidence and low auditability.
 - `With guideline`: stronger justification, better scoped reasoning, and closer to the required evidence-based standard.
-- `Conclusion`: Guideline 7 clearly helped here. The guided response is more trustworthy because it attempts to anchor its claims in the actual tests, even if it still could be improved with stricter line-level citations.
+- `Conclusion`: Guideline 7 clearly helped here. The guided response is more trustworthy because it attempts to anchor its claims in the actual tests, and it could still be improved with stricter line-level citations.
 
 ---
 
