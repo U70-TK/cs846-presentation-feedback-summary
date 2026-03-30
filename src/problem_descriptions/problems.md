@@ -130,31 +130,157 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ---
 
-### Problem C: 
+### Problem C: Pull Request Supply Chain Review (7 mins)
 
-**Model to use:** 
+**Model to use:** GPT-4o
 
-**Task Description:**  
+**Guideline Target:** Guideline 2.2: Automated Dependency Management Tools together with LLM
 
----
-
-### Problem D: 
-
-**Model to use:** 
-
-#### Problem D.1: 
-
-**Task Description:**  
-
-**Starter Code:**  
-
----
-#### Problem D.2: 
+#### Problem C.1: Manual Dependency Diff Review [3 mins]
 
 **Task Description:**
 
-**Starter Code:**
+Navigate to `problem_c/`. The `problem_c/before/` folder contains the dependency files `package.json` and `package-lock.json` before the pull request, and the `problem_c/after/` folder contains the dependency files `package.json` and `package-lock.json` after the pull request. Review the diff from a software supply-chain perspective and verify that the update does not introduce supply-chain risk.
 
+Write your response in the form of a list of findings in bullet points. End with a merge decision (`Approve`, `Request Changes`, or `Reject`) based on all prior considerations.
+
+**Starter Code:**
+See `problem_c/before/` and `problem_c/after/` in the project directory.
+
+#### Problem C.2: LLM-Driven Dependency Audit [4 mins]
+
+**Task Description:**
+
+Now use the LLM's tool-use capabilities to actively audit the dependencies. Instruct the LLM to run `npm audit` on the `problem_c/after/` dependency files and interpret the results. Compare the audit output with your manual findings from C.1:
+
+1. Did `npm audit` surface any vulnerabilities that your manual review missed?
+2. Did your manual review catch any supply-chain risks (e.g., suspicious new packages, typosquatting, unexpected maintainer changes) that `npm audit` did not flag?
+3. Based on both approaches, provide a final merge decision (`Approve`, `Request Changes`, or `Reject`).
+
+This exercise demonstrates why active auditing (LLM + tools) and manual review are complementary — each catches risks the other misses.
+
+**Starter Code:**
+See `problem_c/after/` in the project directory. Run `npm install` in `problem_c/after/` before running `npm audit`.
+
+---
+
+### Problem D: Northwind Signal Project PR Review (25 mins)
+
+**Model to use:** GPT-4o
+
+**Guideline Target:** Guideline 3: Detect Malicious Pull Requests
+
+#### TypeScript Environment Setup
+
+Install Node.js (if you don't have it):
+
+Copy and paste commands from [https://nodejs.org/en/download](https://nodejs.org/en/download).
+
+Install TypeScript (if you don't have it):
+```
+npm install typescript --save-dev
+```
+
+Verify your installation:
+```
+npx tsc
+```
+
+#### How to run this project
+
+**1.** Go to problem_d folder:
+```
+cd problem_d
+```
+**2.** Seed the database:
+```
+cd problem_d_database
+bash seed.sh
+cd ..
+```
+**3.** Start backend:
+```
+cd problem_d_backend
+npm install
+npm run start:dev
+```
+**4.** Create another terminal and start frontend:
+```
+cd problem_d_frontend
+npm install
+npm run dev
+```
+
+#### Problem D.1: Usage Audit Feature PR Review (10 mins)
+
+**Task Description:**
+
+This change integrates a vendor-supplied audit component that is required by the internal usage audit workflow. The underlying audit logic is encapsulated and not exposed at the application layer, as it contains vendor-specific implementation details and compliance logic that should remain internal.
+
+This problem has two phases:
+
+**Phase 1 — Review without instruction files [5 mins]:**
+Review the Pull Request *without* using any `.github/copilot-instructions.md` or path-specific instruction files. List your findings and follow-up questions to the PR owner. End with a merge decision (`Approve`, `Request Changes`, or `Reject`).
+
+**Phase 2 — Review with Guideline 3 instruction file [5 mins]:**
+Now add the malicious pattern detection instructions from Guideline 3 to `.github/copilot-instructions.md` and review the same PR again. Compare the results:
+
+1. Did the instruction file cause the LLM to surface findings that were missed in Phase 1?
+2. What specific risks were identified only after the instruction file was applied?
+3. Provide an updated merge decision.
+
+This exercise demonstrates why operationalizing security guidelines through structured instruction files (Guideline 1) is critical — without them, LLMs tend to drift into surface-level review and miss supply-chain risks.
+
+**Starter Code:**
+The code containing the feature is on branch `feat-audit`, and the PR related to this task is #10. Please review the code first and test it in your browser if you want.
+
+The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/10.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/10.patch).
+
+---
+
+#### Problem D.2: Verified Binary Dependency PR Review (5 mins)
+
+**Task Description:**
+
+This PR commits a compiled binary alongside its C source code, a Makefile, and a `SHA256SUMS` file. The PR description states that the binary is required by the backend and that the source is provided for auditability and reproducibility.
+
+Review the Pull Request using the same Guideline 3 instruction file from D.1 Phase 2. The LLM should flag the binary — but this time, evaluate whether the four-point checklist from Guideline 3 is satisfied:
+
+1. **Provenance:** Is the source code provided? Can you trace the binary's origin?
+2. **Integrity:** Does the SHA-256 hash in `SHA256SUMS` match the committed binary? Verify by running `shasum -a 256 -c SHA256SUMS` in the vendor directory.
+3. **Reproducibility:** Can you compile the C source using the provided Makefile (`make clean && make`) and produce a matching binary?
+4. **Necessity:** Does the PR justify why the binary must be committed rather than built at CI time?
+
+Based on your evaluation:
+- If all four points are satisfied, the correct merge decision is **Approve** (or Request Changes for minor issues) — not a blanket Reject.
+- If any point fails, explain which one and what evidence is missing.
+
+This exercise demonstrates that Guideline 3 is not a blanket "reject all binaries" rule. A verified, reproducible binary with proper attestation can be the safer engineering choice compared to dynamically downloading it at build time (which introduces version drift, non-reproducibility, and upstream compromise risk).
+
+**Starter Code:**
+The code containing the feature is on branch `feat-audit-checksum`, and the PR related to this task is #21. Please review the code first and test it in your browser if you want.
+
+The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/21.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/21.patch). Review the C source, Makefile, `SHA256SUMS`, and the binary itself.
+
+---
+
+#### Problem D.3: Annual Report Generation PR Review (10 mins)
+
+**Task Description:**
+To show the annual report at the frontend, this PR does the following:
+
+- Added backend report module with `/api/reports/company` endpoint that aggregates org, invoices, projects, and usage data.
+- Wired the frontend "Company Briefing" section to fetch the report from the backend.
+- Set up Jest in the backend and added unit tests for the report service.
+
+Please review the Pull Request. List your findings and follow-up questions to the PR owner. End with a merge decision (`Approve`, `Request Changes`, or `Reject`) based on all prior considerations.
+
+**Starter Code:**
+The code containing the feature is on the branch `feat-report`, and the PR related to this task is #15. Please review the code first and test it in your browser if you want. PR #11 is a demo for one of our guidelines. Please do not look at it at this point.
+
+The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/15.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/15.patch). You have already reviewed the dependency files in Problem C, so please focus on the code in this question.
+
+---
 
 ## 2. References
 
