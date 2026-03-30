@@ -57,7 +57,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ---
 
-## Problem B1: Context-First Correctness Review [4 mins]
+#### Problem B1: Functional Correctness Review [4 mins]
 
 **Guideline Target:** Guideline 6: Use a Structured, Context-First Review Prompt
 
@@ -82,7 +82,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ---
 
-## Problem B2: Evidence-Grounded Test Review and Comment Validation [5 mins]
+#### Problem B2: Test Review and Comment Validation [5 mins]
 
 **Guideline Target:** Guideline 7: Require Evidence-Grounded Justification Before Accepting LLM Claims
 
@@ -112,7 +112,7 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ---
 
-## Problem B3: Boundary-Controlled Review [3 mins]
+#### Problem B3: Maintainability and PR-fit Review [3 mins]
 
 **Guideline Target:** Guideline 8: Explicitly State Assumptions, Non-Goals, and Review Boundaries
 
