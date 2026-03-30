@@ -169,11 +169,6 @@ Writing meaningless test cases to inflate high test coverage.
 
 ---
 
-### Guideline N: [Short, Actionable Title]
-(Repeat the same structure for each guideline.)
-
----
-
 ### Guideline 3: Detect Malicious Pull Requests [13]
 
 **Description:**
