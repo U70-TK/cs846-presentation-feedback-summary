@@ -1,6 +1,7 @@
 ## Problem A:
 
 ---
+---
 
 ## Problem B: Backend PR Review and Comment Validation
 
@@ -81,6 +82,8 @@ So the evaluation is:
 - `Without guideline`: weak, generic, only partially useful.
 - `With guideline`: better structured and better scoped, but only moderately better overall.
 - `Conclusion`: Guideline 6 helped, but its impact here was incremental rather than transformative because the resulting review still lacked PR-specific evidence.
+
+---
 
 ### Problem B.2: Test Review and Comment Validation
 **Model to Use:** GPT-4.1
@@ -164,6 +167,8 @@ So the evaluation is:
 - `With guideline`: stronger justification, better scoped reasoning, and closer to the required evidence-based standard.
 - `Conclusion`: Guideline 7 clearly helped here. The guided response is more trustworthy because it attempts to anchor its claims in the actual tests, even if it still could be improved with stricter line-level citations.
 
+---
+
 ### Problem B.3: Maintainability and PR-fit Review
 **Model to Use:** GPT-4.1
 
@@ -242,6 +247,7 @@ So the evaluation is:
 - `With guideline`: better boundary discipline and presentation, but still only moderately grounded in the actual PR code.
 - `Conclusion`: Guideline 8 helped keep the review within scope, but it did not fully solve the deeper issue of generic, weakly evidenced findings.
 
+---
 ---
 
 ## Problem C:
