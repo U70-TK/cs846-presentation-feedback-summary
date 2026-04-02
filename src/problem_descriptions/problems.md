@@ -7,9 +7,12 @@
 ## 1. Example Problems
 
 ### Problem A: 
-**Model to Use:** 
+**Model to Use:** GPT-4.1
 ### Problem Description
 
+You are given crash-dedup, which deduplicates crash reports from distributed systems by grouping repeated crashes into a single entry so developers can focus on unique issues. The project consists of four modules: `fingerprint.py`, which generates MD5 ngerprints from stack traces; `deduplicator.py`, which groups crashes based on similarity; `storage.py`, which stores and retrieves reports using SQLite; and `analyzer.py`, which computes crash frequency statistics and generates reports. 
+
+**Setup:** run once before starting: `pip install -r requirements.txt`
 
 
 ### Problem A_1: 
