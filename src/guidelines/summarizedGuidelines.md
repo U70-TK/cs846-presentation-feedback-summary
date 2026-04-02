@@ -37,7 +37,98 @@
 > **Note:** Guidelines should be actionable, specific, and usable during real coding tasks.
 
 
-### Guideline 1: Understand the Intent Before You Review [7]
+### Guideline 1: Understand the Intent Before You Review — Verify Claims Against Implementation
+
+**Description**
+
+Before judging any code, establish what it is supposed to do by reading the docstring, inline comments, function signature, and surrounding context. However, **do not treat these claims as ground truth**. Instead, verify each claim — especially security-related claims — against the actual implementation. If the intended behavior is unclear or if documentation contradicts the code, flag that mismatch as a finding. When using an LLM as part of your review, include both the claimed intent and explicit instructions to verify the claims rather than assume them. This approach ensures reviewers and models catch code that runs but either does the wrong thing or makes false security promises.
+
+---
+
+**Reasoning**
+
+- **Docstrings can be aspirational, stale, or wrong**, especially around security properties. Simply accepting docstring claims as ground truth leads reviewers and LLMs to approve code that violates those claims.
+- **Code correction ratio improves by up to 23 percentage points** when intent is included in the review prompt, but only if that intent is actively verified rather than passively accepted.
+- **False security claims are dangerous**. If code claims to use constant-time comparison but doesn't, or claims to use parameterized queries but concatenates user input, that mismatch is a P1 bug regardless of whether the code "works."
+- **GPT-4o assessed code correctness 68.5% of the time when given a problem description**, dropping significantly without it. However, if the problem description itself is incorrect, the model validates against the wrong spec and approves dangerous code.
+- **Missing, misleading, or incorrect documentation directly reduces review accuracy** more than generic syntactic or stylistic issues, because it shapes what both human reviewers and LLM models consider "correct."
+- **Claims without proof are placeholders for bugs**. A pull request message claiming "this PR fixes a divide-by-zero bug" doesn't mean it actually does. Reviewers must verify that the claimed fix is present in the code and that the fix is sound.
+
+---
+
+**Good Example: Intent Stated and Claims Verified**
+
+```text
+Review the authenticate_user() function in auth.py.
+
+Stated Intent (from docstring and PR description):
+ - Passwords are stored as SHA-256 hashes
+ - Hash comparison is constant-time to prevent timing attacks
+ - Returns True on success, False on invalid credentials
+ - Validates tokens against a database
+
+For each stated claim, verify it against the actual code:
+
+Claim 1 (SHA-256 hashing):
+  → Find the exact line where the hash is computed and verify the algorithm
+
+Claim 2 (Constant-time comparison):
+  → Find the exact line where stored and provided hashes are compared
+  → Verify it uses a constant-time comparison function (e.g., hmac.compare_digest)
+  → If it uses == or string comparison, explain how timing attacks could leak password info
+
+Claim 3 (Exception behavior):
+  → Does a missing user throw an exception or return False?
+  → Does an invalid token throw an exception or return False?
+  → If exceptions leak information about which check failed, flag it as a security issue
+
+Claim 4 (Database queries):
+  → Check all database queries; if user input is concatenated into query strings,
+    flag as SQL injection even if the docstring doesn't mention it
+
+Flag as HUMAN REVIEW REQUIRED if:
+ - Any security claim (timing-resistant, parameterized queries, input sanitization) 
+   is not actually implemented in the code
+ - Code works but delivers a weaker security promise than documented
+
+Format findings as: [Category | Priority] Location → Claim → Actual Behavior → Consequence → Fix
+
+Provide final verdict: Approve | Request Changes | Reject
+```
+
+---
+
+**Bad Example: Intent Accepted Without Verification**
+
+```text
+Review the authenticate_user() function in auth.py.
+
+The docstring states that this function uses constant-time hash comparison
+to prevent timing attacks. Check if the code is correct.
+```
+
+**Problem with this example:**
+- Does not instruct the reviewer (or LLM) to verify the constant-time claim against the code
+- Assumes the docstring is accurate and complete
+- Will not catch code that claims to be secure but isn't
+- May approve a simple string comparison (`if hash1 == hash2`) without flagging the timing attack vulnerability
+- Does not require the reviewer to check for other unclaimed issues (e.g., SQL injection in the same function)
+
+---
+
+**Bad Example: Claims Accepted Without Scrutiny**
+
+```text
+Review the PR with this message: "This PR fixes a divide-by-zero bug and implements sorting."
+The diff is in changes.patch. Let me know if it's safe to merge.
+```
+
+**Problem with this example:**
+- Takes the PR message at face value without verifying the claim is true
+- Does not require checking whether the divide-by-zero is actually fixed
+- Does not require checking whether the "fix" introduces new bugs
+- Does not ask the reviewer to verify that existing tests pass with the changes
+- Does not require a concrete verdict; invites a summary rather than a judgment
 
 ---
 
@@ -153,11 +244,290 @@ Review this PR and suggest improvements.
 
 ---
 
-### Guideline 4: Assess Regression Risk as Part of Every Review Decision [7]
+### Guideline 4: Assess Regression Risk as Part of Every Review Decision
+
+**[Consolidated from Group 1, 2, 4, 6, and 7 feedback]**
 
 ---
 
-### Guideline 5: Issues That Require Human Judgment [2][7][13][14]
+**Description**
+
+When reviewing any proposed fix, assess whether the change could break existing correct behavior or introduce new risk. Regression risk assessment is not a binary judgment — it requires understanding the behavioral contract of the code, identifying which behaviors must be preserved, evaluating test coverage, and distinguishing between regressions of correct behavior and intentional fixes to wrong contracts. For every fix, systematically report:
+
+1. **The behavioral contract** — what the code is supposed to do
+2. **Regression risk** — Low | Medium | High (relative to correct behavior only)
+3. **Test coverage** — which existing tests validate the affected code path
+4. **API contract changes** — whether the fix changes the public API, documented exception types, or return shapes
+5. **Security criticality** — whether the fix addresses a known vulnerability class
+6. **Combined risk** — how this fix interacts with other changes in the PR
+
+Flag a fix as `HUMAN REVIEW REQUIRED` if and only if **any** of the following are true:
+
+1. Regression risk is `High` **AND** no existing test covers the affected behavior, **OR**
+2. The fix changes the **public API contract** — it changes which exception type is raised on a documented, already-tested path; changes the return type or shape of a public function; or removes a parameter that callers may depend on, **OR**
+3. The fix addresses a **security-critical vulnerability** (SQL injection, auth bypass, hardcoded credentials, unsafe deserialization), **OR**
+4. The fix introduces shared mutable state regressions, nested object aliasing, or cache invalidation issues across multiple calls, **OR**
+5. Combined regression risk of all changes together exceeds what individual changes suggest.
+
+**Do NOT flag a fix as `HUMAN REVIEW REQUIRED` solely because it adds or modifies exception handling.** A guard clause (`if x <= 0: raise ValueError`) that applies to an already-tested code path and does not change the function's documented behavior for valid inputs is Low risk and does not require human review.
+
+---
+
+**Reasoning**
+
+- **Up to 24.8% of AI-suggested code improvements introduce regressions**, breaking previously correct behaviors [7].
+
+- **Exception handling is the most common regression source**, but not all exception changes are equally risky. Adding a guard clause to an already-tested code path is fundamentally different from changing which exception type is raised on that path. The original guideline conflated them, leading to high false-positive rates and reviewer fatigue.
+
+- **Test coverage status is the most reliable predictor** of whether a regression will be caught automatically. A High-risk fix with full test coverage will surface failures in CI; the same fix with no tests will not. The original criterion ignores this distinction entirely.
+
+- **Security vulnerabilities are invisible to regression-only analysis** — they introduce new risk rather than breaking existing behavior. SQL injection, auth bypass, and credential exposure are the highest-impact class of fix and must be flagged separately from behavioral regressions.
+
+- **Shared state and caching bugs require cross-call analysis**, not local code inspection. A fix that mutates a default parameter, aliases a nested object, or invalidates a cache may affect multiple code paths and callers simultaneously. Single-function reviews miss these patterns.
+
+- **Distinguishing correctness regressions from intentional contract fixes** is essential. If tests fail under a proposed fix, the question is: "Did we break something correct?" vs. "Did we stop doing something incorrect that tests accidentally enshrined?" These require different mitigation strategies.
+
+- **Grounding each criterion in a concrete, answerable question** (Is there a test? Does the signature change? Is this a known vulnerability class?) gives the model a deterministic path to the right flag, rather than relying on surface pattern matching that leads to inconsistent decisions.
+
+- **When multiple changes ship together, they can interact in unexpected ways.** Two Medium-risk fixes that are safe individually may combine to create a High-risk scenario. This compound risk must be assessed explicitly.
+
+---
+
+**Good Example: Comprehensive Regression-Aware Review Prompt**
+
+```markdown
+Review all files in the problem_A/ directory.
+
+**Step 1: State the behavioral contract**
+Before suggesting fixes, state the intended contract of each affected function, including:
+- Cache behavior (if any)
+- Exception behavior and documented exception types
+- Normalization rules and defaults
+- Whether mutable state or shared references exist
+- Whether repeated calls should produce independent results
+
+**Step 2: For every fix you suggest, explicitly state:**
+
+- **Issue & why it matters**: the specific bug or problem
+- **Behavioral contract**: does this preserve the documented contract?
+- **Regression risk to correct behavior**: Low | Medium | High
+- **Test coverage**: which existing tests cover the affected code path? (cite the test name)
+- **API contract change**: does this fix change the documented exception type, return type/shape, or parameter semantics on an already-tested path?
+- **Security criticality**: is this fix addressing SQL injection, auth bypass, credentials, or input sanitization?
+- **Shared state impact**: does this fix mutate defaults, create nested object aliases, or affect cross-call behavior?
+- **Concrete failure path**: if regression risk is Medium or High, describe the specific code path and scenario that creates it
+- **Test to catch regression**: provide one concrete test that would fail if the regression occurs
+
+**Step 3: Flag a fix as HUMAN REVIEW REQUIRED if and only if:**
+
+(a) Regression risk is High AND no existing test covers the affected behavior, **OR**
+(b) The fix changes the public API contract as defined above, **OR**
+(c) The fix addresses a security-critical vulnerability, **OR**
+(d) The fix introduces shared mutable state or caching regressions, **OR**
+(e) Combined with other changes in this PR, the risk profile changes.
+
+**Do NOT flag a fix solely because it adds or modifies exception handling.** A guard clause that applies to an already-tested code path and does not change behavior for valid inputs is Low risk and does not require human review.
+
+**Step 4: Assess combined regression risk**
+After evaluating individual fixes, assume ALL changes in this PR ship together.
+What is the worst-case scenario if these changes interact in an unintended way?
+What is the combined regression risk?
+
+**Step 5: End with a merge decision**
+- Approve
+- Request Changes
+- Reject
+- Human Review Required (with specific reasoning)
+```
+
+---
+
+**Bad Example 1: OR-Based Criterion (inflates false positives)**
+
+```markdown
+Review all files in the problem_A/ directory.
+
+For every fix you suggest, explicitly state:
+ - Regression risk: Low | Medium | High
+ - Which currently-passing tests could break if this fix is applied?
+ - Does this fix affect exception handling, shared state, or boundary conditions?
+
+Flag any fix as HUMAN REVIEW REQUIRED if the regression risk is High
+or if the fix affects shared state or exception handling.
+```
+
+**Why this is ineffective:**
+- Any fix that touches exception handling triggers the flag, even trivially safe guard clauses
+- No distinction between breaking correct behavior and fixing a wrong contract
+- Ignores test coverage entirely — High-risk fixes with full CI coverage are treated the same as High-risk fixes with no tests
+- Leads to reviewer fatigue and loss of signal when flags are ignored on safe changes
+
+---
+
+**Bad Example 2: No Regression Analysis at All**
+
+```markdown
+Fix all the bugs you found in problem_a/ directory.
+```
+
+**Why this is dangerous:**
+- Up to 24.8% of suggested fixes introduce regressions
+- Without explicit regression analysis, AI systems reliably break previously correct behavior
+- Silent failures in edge cases, exception paths, and shared state are never surfaced
+- Tests may pass locally but fail in production under unanticipated conditions
+
+---
+
+### Guideline 5: Issues That Require Human Judgment — Mitigated by Explicit Dependency Verification [7][13][14]
+
+**Description**
+
+LLMs have well-documented limitations in code correctness assessment. Research shows LLMs fail to correctly assess code correctness in roughly 1 in 3 cases [Cihan et al.], and achieve only 60-68% agreement with subject-matter experts on domain-specific tasks [Szymanski et al.]. Rather than treating all unmapped issues as inherently unmappable, this guideline identifies a concrete, highly-prevalent failure mode: **hidden dependencies in cached computations** — where LLMs systematically miss state variables, configuration parameters, or external factors that should influence cache keys but do not.
+
+The updated approach shifts from a reactive stance (wait for the LLM to fail, then manually debug) to a proactive stance (explicitly train the LLM to surface and verify hidden dependencies before it signs off on caching logic).
+
+---
+
+**Reasoning**
+
+1. **LLMs miss invisible dependencies:** Caching bugs arise when a computation depends on state (e.g., a global variable, configuration flag, or external service) that is never included in the cache key. LLMs often fail to trace these dependencies because they do not appear in the immediate function scope or call chain.
+
+2. **Concrete, operationalizable criteria work better than generic guidelines:** Rather than saying "human judgment required," we provide a specific, checkable procedure for LLMs to follow when they encounter caching logic. This reduces false negatives.
+
+3. **Staleness is often invisible in unit tests:** A cache that always returns stale data may never trigger a test failure if the test runs only once or if the external state is mocked. LLMs cannot infer staleness from code structure alone; they must be explicitly prompted to reason about it.
+
+4. **Low cost, high confidence:** Asking the LLM to enumerate variables, cross-check the cache key, and justify staleness risk adds roughly 10% overhead to review time but catches a class of bugs that slip through otherwise.
+
+---
+
+**Good Example: Explicit Dependency Verification in Caching Review**
+
+**Prompt:**
+
+```
+Review the following Python code for caching logic.
+
+Focus specifically on hidden dependencies in cached computations.
+
+For each caching operation:
+
+1. Identify all variables that influence the computation result:
+   - Local variables in the function
+   - Function parameters
+   - Class attributes and mutable fields
+   - Global variables
+   - Environment variables
+   - External service state (database, file system, network)
+   - Configuration files or singletons
+
+2. State the current cache key and verify it includes all identified dependencies.
+
+3. For each dependency NOT in the cache key, determine:
+   - Is this a bug (cache may become stale)?
+   - Is this intentional (e.g., we always want the cached value regardless of that state)?
+   - If intentional, explicitly justify why staleness is acceptable.
+
+4. If a computation depends on global state or configuration, determine whether the cache may 
+   become stale and suggest how to invalidate it (TTL, event-driven, or explicit key inclusion).
+
+Do not sign off on caching logic until you have answered all four checks.
+
+---
+
+Code to review:
+
+[code snippet here]
+```
+
+**When applied to real code:**
+
+```python
+# Example: cache with hidden dependency
+
+config = {"discount_rate": 0.1}
+
+def calculate_price(item_id):
+    # Hidden dependency: config["discount_rate"]
+    item = db.get_item(item_id)
+    price = item.base_price * (1 - config["discount_rate"])
+    
+    # Cache key does NOT include config
+    cache[item_id] = price
+    return price
+```
+
+**Good review output:**
+
+```
+Finding: Hidden dependency in cache key
+
+Location: calculate_price() line 8
+
+Identified dependencies:
+1. item_id (parameter) — included in cache key ✓
+2. db.get_item() result (external call) — NOT in cache key ✗
+3. config["discount_rate"] (global state) — NOT in cache key ✗
+
+Issue: If config["discount_rate"] changes, cached prices remain stale.
+
+Examples of staleness:
+- Admin updates discount_rate to 0.15; existing cached prices still reflect 0.1
+- Item is updated in database; cached price may not reflect new base_price
+
+Suggested fix:
+- Include discount_rate in cache key: cache[(item_id, config["discount_rate"])] = price
+- OR implement TTL-based invalidation (e.g., cache expires every 1 hour)
+- OR invalidate cache when config changes (e.g., on_config_change.register(clear_cache))
+- OR document that this cache intentionally ignores config changes and why that is safe
+
+Regression risk: Medium — changing cache behavior could affect dependent services.
+```
+
+---
+
+**Bad Example: Generic "Human Judgment Required" Flag Without Specificity**
+
+**Prompt:**
+
+```
+Review this code and flag any issues that require human judgment.
+```
+
+**Output:**
+
+```
+Finding: Cache logic present
+Regression risk: Medium
+Note: This requires human judgment. LLMs have been shown to miss caching bugs.
+Status: HUMAN REVIEW REQUIRED
+```
+
+**Why this is ineffective:**
+
+1. **No actionable guidance:** The reviewer doesn't know what to look for. Are we worried about staleness? Correctness? Memory leaks?
+2. **Unclear triage:** "Human judgment required" on every caching function creates alert fatigue. Reviewers learn to ignore the flag.
+3. **No specificity:** The LLM didn't attempt to find the issue; it just punted to humans.
+4. **Missed concrete checks:** We never asked the LLM to enumerate dependencies or verify cache keys. Even if an LLM cannot guarantee correctness, it can follow a procedure that surfaces concrete risks.
+
+---
+
+**Integration with Code Review Workflow**
+
+**When to apply this guideline:**
+
+- Any function that stores results in a cache (Redis, memcached, in-memory dict, class-level cache)
+- Any decorator like `@lru_cache` or `@cache`
+- Memoization patterns
+
+**Checklist for reviewers:**
+
+When an LLM flags caching logic:
+1. ✓ Did it enumerate all variables that influence the result?
+2. ✓ Did it check whether all those variables are in the cache key?
+3. ✓ Did it identify potential staleness scenarios?
+4. ✓ Did it justify why any missing dependencies are intentional and safe?
+
+If any check is missing, ask the LLM to re-review with the explicit dependency procedure.
 
 ---
 
