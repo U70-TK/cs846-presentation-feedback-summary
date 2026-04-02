@@ -16,6 +16,8 @@
 - uReview: Scalable, Trustworthy GenAI for Code Review at Uber [11] 
 - Detecting malicious pull requests at scale with LLMs [12]
 
+> *Note: The following document contains the summarized guidelines for those guidelines where the class provided counterarguments, and the rest of the guidelines are put as they were during our presentation (2, 6, 7, 10.1, 10.3)*
+
 ## Relevant Guidelines per Problem
 | Question |          Guidelines               |
 |----------|-----------------------------------|
