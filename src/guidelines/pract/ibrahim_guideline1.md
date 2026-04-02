@@ -1,4 +1,4 @@
-# Guideline 7: Understand the Intent Before You Review — Verify Claims Against Implementation
+# Guideline 1: Understand the Intent Before You Review — Verify Claims Against Implementation
 
 ## Description
 
