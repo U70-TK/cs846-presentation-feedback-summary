@@ -8,7 +8,7 @@ on:
       - feat-generate-report
       - feat-audit-based-on-role
     paths:
-      - 'problem_d/**'
+      - 'src/artifacts/problem_d/**'
       - '.github/workflows/semgrep.yml'
       - '.github/semgrep.yml'
 
@@ -33,7 +33,7 @@ jobs:
             --config .github/semgrep.yml \
             --sarif --output semgrep.sarif \
             --no-error \
-            problem_d || true
+            src/artifacts/problem_d || true
 
       - name: Upload SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
