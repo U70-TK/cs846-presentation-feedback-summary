@@ -5,10 +5,10 @@ on:
     branches:
       - problem_d
     paths:
-      - 'problem_d/problem_d_backend/package.json'
-      - 'problem_d/problem_d_backend/package-lock.json'
-      - 'problem_d/problem_d_frontend/package.json'
-      - 'problem_d/problem_d_frontend/package-lock.json'
+      - 'src/artifacts/problem_d/problem_d_backend/package.json'
+      - 'src/artifacts/problem_d/problem_d_backend/package-lock.json'
+      - 'src/artifacts/problem_d/problem_d_frontend/package.json'
+      - 'src/artifacts/problem_d/problem_d_frontend/package-lock.json'
   workflow_dispatch:
 
 permissions:
