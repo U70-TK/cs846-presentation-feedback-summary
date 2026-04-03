@@ -226,6 +226,10 @@ https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-
 
 ### Problem C: Pull Request Supply Chain Review (7 mins)
 
+**Declaration:**
+
+The revision to this problem is partially aided by Claude Code Opus 4.6.
+
 **Model to use:** GPT-4o
 
 **Guideline Target:** Guideline 10.2: Automated Dependency Management Tools together with LLM
@@ -259,6 +263,10 @@ See `problem_c/after/` in the project directory. Run `npm install` in `problem_c
 ---
 
 ### Problem D: Northwind Signal Project PR Review (25 mins)
+
+**Declaration:**
+
+The revision to this problem is partially aided by Claude Code Opus 4.6.
 
 **Model to use:** GPT-4o
 
@@ -305,56 +313,224 @@ npm install
 npm run dev
 ```
 
-#### Problem D.1: Usage Audit Feature PR Review (10 mins)
+#### Problem D.1: Usage Audit Feature — Which PR Should Be Merged? (10 mins)
 
 **Task Description:**
 
-This change integrates a vendor-supplied audit component that is required by the internal usage audit workflow. The underlying audit logic is encapsulated and not exposed at the application layer, as it contains vendor-specific implementation details and compliance logic that should remain internal.
+Two competing PRs implement the same vendor-supplied audit component for the internal usage audit workflow. Both add the same backend endpoints and frontend audit panel, but they differ in how the vendor binary is handled:
 
-This problem has two phases:
+- **[PR #2](https://github.com/U70-TK/cs846-presentation-feedback-summary/pull/2)** (branch `feat-audit`): Commits a vendor-provided binary (`audit_writer`) directly into the repository with no source code, no build instructions, and no integrity verification.
+- **[PR #4](https://github.com/U70-TK/cs846-presentation-feedback-summary/pull/4)** (branch `feat-audit-checksum`): Commits the same binary alongside its C source code (`audit_writer.c`), a `Makefile`, and a `SHA256SUMS` file for integrity verification.
 
-**Phase 1 — Review without instruction files [5 mins]:**
-Review the Pull Request *without* using any `.github/copilot-instructions.md` or path-specific instruction files. List your findings and follow-up questions to the PR owner. End with a merge decision (`Approve`, `Request Changes`, or `Reject`).
+Add the malicious pattern detection instructions from Guideline 3 to `.github/copilot-instructions.md`, then review **both PRs** and answer the following:
 
-**Phase 2 — Review with Guideline 11 instruction file [5 mins]:**
-Now add the malicious pattern detection instructions from Guideline 11 to `.github/copilot-instructions.md` and review the same PR again. Compare the results:
+1. Which PR should be merged, and why?
+2. For the PR you reject, list the specific evidence requirements from Guideline 3's checklist that are not satisfied.
+3. For the PR you accept, verify the four-point checklist:
+   - **Provenance:** Is the source code provided? Can you trace the binary's origin?
+   - **Integrity:** Run `shasum -a 256 -c SHA256SUMS` in the vendor directory. Does the checksum match?
+   - **Reproducibility:** Run `make clean && make` to compile from source. Does the output match the committed binary?
+   - **Necessity:** Does the PR justify why the binary must be committed rather than built at CI time?
+4. End with a merge decision for each PR.
 
-1. Did the instruction file cause the LLM to surface findings that were missed in Phase 1?
-2. What specific risks were identified only after the instruction file was applied?
-3. Provide an updated merge decision.
-
-This exercise demonstrates why operationalizing security guidelines through structured instruction files (Guideline 9) is critical — without them, LLMs tend to drift into surface-level review and miss supply-chain risks.
+This exercise demonstrates that Guideline 3 is not a blanket "reject all binaries" rule — a verified, reproducible binary with proper attestation can be the safer engineering choice compared to an opaque, unverifiable one.
 
 **Starter Code:**
-The code containing the feature is on branch `feat-audit`, and the PR related to this task is #10. Please review the code first and test it in your browser if you want.
 
-The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/10.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/10.patch).
+- PR #2 diff: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/2.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/2.patch)
+- PR #4 diff: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/4.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/4.patch)
 
 ---
 
-#### Problem D.2: Verified Binary Dependency PR Review (5 mins)
+#### Problem D.2: Plaintext Malicious Code Detection (5 mins)
+
+**Declaration:**
+
+This problem is inspired by one of the counterexamples from the class. 
 
 **Task Description:**
 
-This PR commits a compiled binary alongside its C source code, a Makefile, and a `SHA256SUMS` file. The PR description states that the binary is required by the backend and that the source is provided for auditability and reproducibility.
+A colleague has submitted a PR that adds a `text_processor.py` — a text analysis and transformation toolkit. The PR description says:
 
-Review the Pull Request using the same Guideline 11 instruction file from D.1 Phase 2. The LLM should flag the binary — but this time, evaluate whether the four-point checklist from Guideline 11 is satisfied:
+> Added text processor with word/character counts, frequency analysis, palindrome detection, sentence stats, and various text transformations.
 
-1. **Provenance:** Is the source code provided? Can you trace the binary's origin?
-2. **Integrity:** Does the SHA-256 hash in `SHA256SUMS` match the committed binary? Verify by running `shasum -a 256 -c SHA256SUMS` in the vendor directory.
-3. **Reproducibility:** Can you compile the C source using the provided Makefile (`make clean && make`) and produce a matching binary?
-4. **Necessity:** Does the PR justify why the binary must be committed rather than built at CI time?
+The code looks like a straightforward utility module with no binary files, no external dependencies, and no obvious red flags at first glance.
 
-Based on your evaluation:
-- If all four points are satisfied, the correct merge decision is **Approve** (or Request Changes for minor issues) — not a blanket Reject.
-- If any point fails, explain which one and what evidence is missing.
+Using the same Guideline 3 instruction file from D.1, review the following code and decide whether the PR should be merged.
 
-This exercise demonstrates that Guideline 11 is not a blanket "reject all binaries" rule. A verified, reproducible binary with proper attestation can be the safer engineering choice compared to dynamically downloading it at build time (which introduces version drift, non-reproducibility, and upstream compromise risk).
+```python
+#!/usr/bin/env python3
+"""
+Text Processing Toolkit - A multi-purpose text analysis and transformation program.
+Performs word/character counts, frequency analysis, palindrome detection,
+sentence stats, and various text transformations.
+"""
 
-**Starter Code:**
-The code containing the feature is on branch `feat-audit-checksum`, and the PR related to this task is #21. Please review the code first and test it in your browser if you want.
+import re
+import string
+from collections import Counter
+import os
 
-The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/21.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/21.patch). Review the C source, Makefile, `SHA256SUMS`, and the binary itself.
+def load_text(path: str) -> str:
+    """Load text from a file. Returns empty string on error."""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except (OSError, IOError):
+        return ""
+
+def clean_word(word: str) -> str:
+    """Strip punctuation and lowercase a word for analysis."""
+    return word.strip(string.punctuation).lower()
+
+def get_words(text: str) -> list[str]:
+    """Split text into a list of cleaned words."""
+    return [clean_word(w) for w in text.split() if clean_word(w)]
+
+def count_words(text: str) -> int:
+    """Return total word count (excluding empty/punctuation-only tokens)."""
+    return len(get_words(text))
+
+def count_characters(text: str, include_spaces: bool = True) -> int:
+    """Return character count. Set include_spaces=False to exclude spaces."""
+    if include_spaces:
+        return len(text)
+    return len(text.replace(" ", "").replace("\n", "").replace("\t", ""))
+
+def count_sentences(text: str) -> int:
+    """Approximate sentence count using period, exclamation, question marks."""
+    if not text.strip():
+        return 0
+    parts = re.split(r"[.!?]+", text)
+    return len([p for p in parts if p.strip()])
+
+def word_frequency(text: str, top_n: int = 10) -> list[tuple[str, int]]:
+    """Return the top_n most frequent words as (word, count) pairs."""
+    words = get_words(text)
+    if not words:
+        return []
+    counts = Counter(words)
+    return counts.most_common(top_n)
+
+def is_palindrome(s: str) -> bool:
+    """Return True if s is a palindrome (ignoring case and non-alphanumeric)."""
+    cleaned = "".join(c for c in s.lower() if c.isalnum())
+    return cleaned == cleaned[::-1] if cleaned else False
+
+def find_palindromes(text: str) -> list[str]:
+    """Return all palindromic words in the text."""
+    words = set(get_words(text))
+    return sorted([w for w in words if is_palindrome(w)])
+
+def average_word_length(text: str) -> float:
+    """Return mean word length. Returns 0.0 if no words."""
+    words = get_words(text)
+    if not words:
+        return 0.0
+    return sum(len(w) for w in words) / len(words)
+
+def longest_words(text: str, n: int = 5) -> list[str]:
+    """Return the n longest unique words, sorted by length descending."""
+    words = list(dict.fromkeys(get_words(text)))
+    words.sort(key=len, reverse=True)
+    return words[:n]
+
+def reverse_words(text: str) -> str:
+    """Reverse the order of words in each line. Punctuation stays attached."""
+    lines = text.split("\n")
+    result = []
+    for line in lines:
+        words = line.split()
+        result.append(" ".join(reversed(words)))
+    return "\n".join(result)
+
+def to_title_case(text: str) -> str:
+    """Convert text to title case (each word capitalized)."""
+    return text.title()
+
+def remove_extra_spaces(text: str) -> str:
+    """Collapse multiple spaces/newlines to single space, strip lines."""
+    lines = text.split("\n")
+    cleaned = [" ".join(line.split()) for line in lines]
+    return "\n".join(cleaned)
+
+def remove_file_os(filename):
+    """
+    Deletes a file using the os.remove() function with error handling.
+    """
+    try:
+        os.remove(filename)
+        print(f"File '{filename}' has been deleted successfully.")
+    except FileNotFoundError:
+        print(f"Error: The file '{filename}' does not exist.")
+    except PermissionError:
+        print(f"Error: Permission denied to delete the file '{filename}'.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def print_report(text: str, title: str = "Text Report") -> None:
+    """Print a formatted analysis report for the given text."""
+    print("=" * 60)
+    print(f"  {title}")
+    print("=" * 60)
+    print(f"  Words:        {count_words(text):,}")
+    print(f"  Characters:   {count_characters(text):,} (with spaces)")
+    print(f"  Characters:   {count_characters(text, False):,} (no spaces)")
+    print(f"  Sentences:    {count_sentences(text):,}")
+    print(f"  Avg word len: {average_word_length(text):.2f}")
+    print("-" * 60)
+    print("  Top 10 words:")
+    for word, count in word_frequency(text, 10):
+        print(f"    {word!r}: {count}")
+    print("-" * 60)
+    print("  Longest words:", longest_words(text, 5))
+    palindromes = find_palindromes(text)
+    if palindromes:
+        print("  Palindromes: ", palindromes)
+    else:
+        print("  Palindromes:  (none found)")
+    print("=" * 60)
+
+def main() -> None:
+    """Run the text processor: analyze sample or file, then demo transforms."""
+    sample = (
+        "Hello world! This is a sample text. "
+        "Did you know that noon and level are palindromes? "
+        "Python is great for text processing. "
+        "Repeat repeat repeat for frequency."
+    )
+
+    print_report(sample, "Sample Text Report")
+
+    print("\n--- Transform demos ---\n")
+    print("Reverse words:")
+    print(reverse_words(sample))
+    print("\nTitle case:")
+    print(to_title_case(sample))
+    print("\nExtra spaces removed:")
+    messy = "  too   many    spaces   "
+    print(repr(remove_extra_spaces(messy)))
+
+    remove_file_os("helpers.py")
+
+    import sys
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+        file_text = load_text(path)
+        if file_text:
+            print_report(file_text, f"File Report: {path}")
+        else:
+            print(f"Could not read file: {path}")
+
+if __name__ == "__main__":
+    main()
+```
+
+Answer the following:
+
+1. Should this PR be merged? Why or why not?
+2. Did the Guideline 3 instruction file help the LLM catch the issue? If not, what additional prompt was needed?
+3. What does this tell you about the limitations of focusing only on binary executables when reviewing for malicious code?
 
 ---
 

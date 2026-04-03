@@ -27,9 +27,11 @@
 | B.1 | 6 |
 | B.2 | 7 |
 | B.3 | 8 |
-| C | 10.2 |
-| D.1 | 9, 11 |
-| D.2 | 9, 10.1, 10.3 | 
+| C.1 | 10.2 |
+| C.2 | 10.2 |
+| D.1 | 9, 10.2, 11 |
+| D.2 | 9, 11 | 
+| D.3 | 9, 10.1, 10.3 | 
 
 
 
@@ -777,7 +779,7 @@ You are an experienced coding agent, please verify the dependency versions for m
 
 This is too vague — it does not specify what tool to use, what vulnerabilities to check against, or what action to take on findings.
 
-#### Guideline 10.3 Enforce Test Quality over Coverage [18]
+#### Guideline 10.3 Enforce Test Quality over Coverage
 
 **Description:**
 
