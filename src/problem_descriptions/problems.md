@@ -298,6 +298,8 @@ This exercise demonstrates that Guideline 11 is not a blanket "reject all binari
 
 **Starter Code:**
 
+Inside folder `artifact/problem_d`:
+
 - PR #2 diff: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/2.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/2.patch)
 - PR #4 diff: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/4.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-feedback-summary/pull/4.patch)
 
@@ -342,5 +344,7 @@ Please review the Pull Request. List your findings and follow-up questions to th
 The code containing the feature is on the branch `feat-report`, and the PR related to this task is #15. Please review the code first and test it in your browser if you want. PR #11 is a demo for one of our guidelines. Please do not look at it at this point.
 
 The diff for this PR can be found at: [https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/15.patch](https://patch-diff.githubusercontent.com/raw/U70-TK/cs846-presentation-winter-26/pull/15.patch). You have already reviewed the dependency files in Problem C, so please focus on the code in this question.
+
+You should be able to find the code inside the folder `artifact/problem_d`.
 
 ---
