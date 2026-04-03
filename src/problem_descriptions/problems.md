@@ -88,10 +88,8 @@ Why it matters: ...   Suggested action: ...
 
 **Step 5 — Compound Risk:** Do any combinations interact to create higher-severity risks? Describe chains with a combined severity. Example: "Configurable threshold (no tests) + stale cache (no invalidation) = P1 data correctness risk."
 
----
-
-
 **Starter Code:** `src/artifacts/problem_a/crash_dedup/` | Tests: `tests/`
+
 ---
 
 ### Problem B: Local Python PR Review And Comment Validation
