@@ -1,0 +1,58 @@
+rules:
+  - id: typescript-no-any
+    message: "Avoid 'any' in TypeScript. Use a specific type or 'unknown'."
+    languages: [typescript]
+    severity: WARNING
+    pattern-either:
+      - pattern: "const $X: any = $Y"
+      - pattern: "let $X: any = $Y"
+      - pattern: "var $X: any = $Y"
+      - pattern: "($P: any) => $BODY"
+      - pattern: "function $F($P: any, ...$REST) { ... }"
+      - pattern: "function $F(...$ARGS: any[]) { ... }"
+      - pattern: "class $C { $K: any; }"
+      - pattern: "function $F(...$ARGS): any { ... }"
+      - pattern: "$M(...$ARGS): any { ... }"
+
+  - id: typescript-camelcase-variables
+    message: "Use camelCase for variable names."
+    languages: [typescript]
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: "const $X = $Y"
+          - pattern: "let $X = $Y"
+          - pattern: "var $X = $Y"
+      - metavariable-regex:
+          metavariable: "$X"
+          regex: "(^[A-Z]|.*_.*)"
+
+  - id: typescript-camelcase-functions
+    message: "Use camelCase for function names."
+    languages: [typescript]
+    severity: WARNING
+    patterns:
+      - pattern: "function $F(...) { ... }"
+      - metavariable-regex:
+          metavariable: "$F"
+          regex: "(^[A-Z]|.*_.*)"
+
+  - id: typescript-pascalcase-classes
+    message: "Use PascalCase for class names."
+    languages: [typescript]
+    severity: WARNING
+    patterns:
+      - pattern: "class $C { ... }"
+      - metavariable-regex:
+          metavariable: "$C"
+          regex: "(^[a-z]|.*_.*)"
+
+  - id: typescript-pascalcase-interfaces
+    message: "Use PascalCase for interface names."
+    languages: [typescript]
+    severity: WARNING
+    patterns:
+      - pattern: "interface $I { ... }"
+      - metavariable-regex:
+          metavariable: "$I"
+          regex: "(^[a-z]|.*_.*)"

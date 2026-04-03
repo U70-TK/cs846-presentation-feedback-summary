@@ -1,0 +1,41 @@
+name: Semgrep (problem_d)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat-audit
+      - feat-generate-report
+      - feat-audit-based-on-role
+    paths:
+      - 'problem_d/**'
+      - '.github/workflows/semgrep.yml'
+      - '.github/semgrep.yml'
+
+jobs:
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep (SARIF)
+        run: |
+          python -m pip install --upgrade pip
+          pip install semgrep
+
+          semgrep scan \
+            --config .github/semgrep.yml \
+            --sarif --output semgrep.sarif \
+            --no-error \
+            problem_d || true
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
