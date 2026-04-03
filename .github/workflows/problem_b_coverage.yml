@@ -6,7 +6,7 @@ on:
       - problem_b
       - feat-user-helper
     paths:
-      - 'problem_b/**'
+      - 'src/artifacts/problem_b/**'
       - '.github/workflows/problem_b_coverage.yml'
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: problem_b
+        working-directory: src/artifacts/problem_b
 
     steps:
       - name: Checkout
