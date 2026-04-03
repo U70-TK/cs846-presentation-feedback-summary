@@ -16,7 +16,7 @@
 - uReview: Scalable, Trustworthy GenAI for Code Review at Uber [11] 
 - Detecting malicious pull requests at scale with LLMs [12]
 
-> *Note: The following document contains the summarized guidelines for those guidelines where the class provided counterarguments, and the rest of the guidelines are put as they were during our presentation (2, 6, 7, 10.1, 10.3)*
+> *Note: The following document contains the summarized guidelines for those guidelines where the class provided counterarguments, and the rest of the guidelines are put as they were during our presentation (Guidelines: 2, 6, 7, 10.1, 10.3)*
 
 ## Relevant Guidelines per Problem
 | Question |          Guidelines               |
@@ -41,7 +41,7 @@
 > **Note:** Guidelines should be actionable, specific, and usable during real coding tasks.
 
 
-### Guideline 1: Understand the Intent Before You Review — Verify Claims Against Implementation
+### Guideline 1: Understand the Intent Before You Review [7] — Verify Claims Against Implementation
 
 **Description**
 
@@ -54,7 +54,7 @@ Before judging any code, establish what it is supposed to do by reading the docs
 - **Docstrings can be aspirational, stale, or wrong**, especially around security properties. Simply accepting docstring claims as ground truth leads reviewers and LLMs to approve code that violates those claims.
 - **Code correction ratio improves by up to 23 percentage points** when intent is included in the review prompt, but only if that intent is actively verified rather than passively accepted.
 - **False security claims are dangerous**. If code claims to use constant-time comparison but doesn't, or claims to use parameterized queries but concatenates user input, that mismatch is a P1 bug regardless of whether the code "works."
-- **GPT-4o assessed code correctness 68.5% of the time when given a problem description**, dropping significantly without it. However, if the problem description itself is incorrect, the model validates against the wrong spec and approves dangerous code.
+- **GPT-4o assessed code correctness 68.5% of the time when given a problem description** [7], dropping significantly without it. However, if the problem description itself is incorrect, the model validates against the wrong spec and approves dangerous code.
 - **Missing, misleading, or incorrect documentation directly reduces review accuracy** more than generic syntactic or stylistic issues, because it shapes what both human reviewers and LLM models consider "correct."
 - **Claims without proof are placeholders for bugs**. A pull request message claiming "this PR fixes a divide-by-zero bug" doesn't mean it actually does. Reviewers must verify that the claimed fix is present in the code and that the fix is sound.
 
@@ -181,7 +181,7 @@ Can you check the crash_dedup code and tell me if there are any problems?
 
 ---
 
-### Guideline 3: Categorize Every Issue, Then Triage Interactions and Escalate Design Decisions [4]
+### Guideline 3: Categorize Every Issue [4], Then Triage Interactions and Escalate Design Decisions
 
 **Description:**
 
@@ -208,10 +208,10 @@ The extended version improves the original by addressing common failure modes:
 ```
 You are a senior code reviewer. Review this PR diff.
 
-Step 0 — Scope:
+Step 1 — Scope:
 Focus only on issues supported by the diff and the shown code. Prefer high-signal findings.
 
-Step 1 — Categorize EACH finding before suggesting fixes:
+Step 2 — Categorize EACH finding before suggesting fixes:
 For each finding, output exactly:
 [Priority] [Type] - Finding
 Why it matters: ...
@@ -231,7 +231,7 @@ Competing interpretations: (A) ... (B) ...
 Decision needed: ...
 Then suggest next steps (e.g., clarify contract, add tests) rather than a single definitive code change.
 
-Step 2 — Compound Risk Assessment:
+Step 3 — Compound Risk Assessment:
 Now consider ALL findings and ALL changes together.
 Do any combinations of changes/issues interact to create a higher-severity security or correctness risk than any single item alone?
 Describe any vulnerability/correctness chains and assign a combined severity (P1/P2/P3).
@@ -248,7 +248,7 @@ Review this PR and suggest improvements.
 
 ---
 
-### Guideline 4: Assess Regression Risk as Part of Every Review Decision
+### Guideline 4: Assess Regression Risk as Part of Every Review Decision [7]
 
 **[Consolidated from Group 1, 2, 4, 6, and 7 feedback]**
 
@@ -382,11 +382,11 @@ Fix all the bugs you found in problem_a/ directory.
 
 ---
 
-### Guideline 5: Issues That Require Human Judgment — Mitigated by Explicit Dependency Verification [7][13][14]
+### Guideline 5: Issues That Require Human Judgment — Mitigated by Explicit Dependency Verification [2][7][13][14]
 
 **Description**
 
-LLMs have well-documented limitations in code correctness assessment. Research shows LLMs fail to correctly assess code correctness in roughly 1 in 3 cases [Cihan et al.], and achieve only 60-68% agreement with subject-matter experts on domain-specific tasks [Szymanski et al.]. Rather than treating all unmapped issues as inherently unmappable, this guideline identifies a concrete, highly-prevalent failure mode: **hidden dependencies in cached computations** — where LLMs systematically miss state variables, configuration parameters, or external factors that should influence cache keys but do not.
+LLMs have well-documented limitations in code correctness assessment. Research shows LLMs fail to correctly assess code correctness in roughly 1 in 3 cases (Cihan et al. [7]), and achieve only 60-68% agreement with subject-matter experts on domain-specific tasks (Szymanski et al. [13]). Rather than treating all unmapped issues as inherently unmappable, this guideline identifies a concrete, highly-prevalent failure mode: **hidden dependencies in cached computations** — where LLMs systematically miss state variables, configuration parameters, or external factors that should influence cache keys but do not.
 
 The updated approach shifts from a reactive stance (wait for the LLM to fail, then manually debug) to a proactive stance (explicitly train the LLM to surface and verify hidden dependencies before it signs off on caching logic).
 
